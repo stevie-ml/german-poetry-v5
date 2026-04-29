@@ -1,39 +1,34 @@
 """
-01_extract.py — Extract poems from TEI XML files for v5 corpus.
+01_extract.py  —  TEI-XML → poems_v2.json + exclusions_v2.csv
 
-Input:  ~/german-poetry-v5/corpus/  (poet subdirectories with .xml files)
-Output: ~/german-poetry-v5/output/poems_raw.json
-
-Special handling:
-  - Stefan George: lxml recovery mode (embedded <?xml?> declarations in teiCorpus),
-    plus george_normalized_text field with standard German capitalization applied
-    via spaCy de_core_news_lg (NOUN/PROPN + line-initial capitalization)
-
-Exclusions (same as v4):
-  - Poems < MIN_LINES or > MAX_LINES
-  - Theatrical content (<sp> / <speaker> tags), except West-östlicher Divan
-  - EXCLUDE_TITLES set
+Rules:
+  - Verse lines = <l> elements only
+  - Skip lines inside <argument>, <epigraph>, <note>, <sp>, <stage>
+  - Minimum 4 verse lines; maximum 400
+  - Stanza pattern from parent <lg> grouping
+  - Collection pub year from hand-coded lookup (ORIGINAL collection, not Sammelband)
+  - Uncertainty flagged explicitly; never silently guessed
 """
 
-import json
-import re
+import json, re, sys
 from pathlib import Path
-import xml.etree.ElementTree as ET
+from collections import OrderedDict
+import csv
 
 try:
-    from lxml import etree as lxml_etree
+    from lxml import etree as LET
     HAS_LXML = True
 except ImportError:
     HAS_LXML = False
-
-import spacy
-nlp = spacy.load("de_core_news_lg")
+    import xml.etree.ElementTree as ET
 
 CORPUS_DIR = Path.home() / "german-poetry-v5" / "corpus"
 OUT_DIR    = Path.home() / "german-poetry-v5" / "output"
-OUT_DIR.mkdir(exist_ok=True)
+OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-NS        = "http://www.tei-c.org/ns/1.0"
+NS  = "http://www.tei-c.org/ns/1.0"
+def T(name): return f"{{{NS}}}{name}"
+
 MIN_LINES = 4
 MAX_LINES = 400
 
@@ -41,339 +36,347 @@ EXCLUDE_TITLES = {
     "fußnoten", "anmerkungen", "register", "inhaltsverzeichnis",
     "vorwort", "nachwort", "widmung", "einleitung", "anhang",
     "erstes buch", "zweites buch", "drittes buch", "viertes buch",
-    "fünftes buch", "sechstes buch", "siebtes buch", "achtes buch",
-    "erster teil", "zweiter teil", "dritter teil",
+    "fünftes buch", "erster teil", "zweiter teil", "dritter teil",
+    "prolog", "epilog",
 }
 
-# ── Helpers ──────────────────────────────────────────────────────────────────
+# Tags whose descendants are not verse lines
+EXCLUDED_ANCESTORS = {T(x) for x in
+    ["argument", "epigraph", "note", "sp", "stage", "figure", "table", "bibl"]}
 
-def tag(name):
-    return f"{{{NS}}}{name}"
+# ── Collection pub-year lookup ───────────────────────────────────────────────
+# Key: (poet_fragment_lower, collection_fragment_lower)
+# Value: (year: int|None, uncertain: bool, note: str)
+# Longest matching key wins.
+COLL_PUB_YEARS = {
+    # Trakl
+    ("trakl","gedichte"):               (1913, False, "Kurt Wolff, Leipzig, 1913"),
+    ("trakl","sebastian im traum"):     (1915, False, "Kurt Wolff, Leipzig, 1915"),
+    ("trakl","die dichtungen"):         (1917, True,  "Posth. collected ed., Kurt Wolff 1917"),
+    ("trakl","dichtungen"):             (1917, True,  "Posth. collected ed., Kurt Wolff 1917"),
+    # Heym
+    ("heym","der ewige tag"):           (1911, False, "Ernst Rowohlt, Leipzig, 1911"),
+    ("heym","umbra vitae"):             (1912, True,  "Posth., Ernst Rowohlt, Leipzig, 1912"),
+    ("heym","dichtungen"):              (1922, True,  "Posth. collected ed., Munich, 1922"),
+    ("heym","marathon"):                (1914, True,  "Posth., 1914"),
+    # Stadler
+    ("stadler","aufbruch"):             (1914, False, "A.R. Meyer, Berlin-Wilmersdorf, 1914"),
+    ("stadler","präludien"):            (1905, False, "Strassburg, 1905"),
+    # van Hoddis
+    ("hvh","weltende"):                 (1918, True,  "Posth. ed. 1918; 'Weltende' poem first publ. Der Demokrat 1911"),
+    ("van hoddis","weltende"):          (1918, True,  "Posth. ed. 1918"),
+    # Rilke
+    ("rilke","stundenbuch"):            (1905, False, "Insel, Leipzig, 1905"),
+    ("rilke","buch der bilder"):        (1902, False, "Axel Juncker, Berlin, 1902; expanded 1906"),
+    ("rilke","neue gedichte"):          (1907, False, "Insel, Leipzig, 1907"),
+    ("rilke","neuen gedichte anderer"): (1908, False, "Insel, Leipzig, 1908"),
+    ("rilke","duineser elegien"):       (1923, False, "Insel, Leipzig, 1923"),
+    ("rilke","sonette an orpheus"):     (1923, False, "Insel, Leipzig, 1923"),
+    ("rilke","marien-leben"):           (1913, False, "Insel, Leipzig, 1913"),
+    ("rilke","mir zur feier"):          (1899, False, "Berlin, 1899"),
+    ("rilke","larenopfer"):             (1896, False, "Prague, 1896"),
+    ("rilke","traumgekrönt"):           (1897, False, "Leipzig, 1897"),
+    ("rilke","frühen gedichte"):        (1909, True,  "Rev. of 'Mir zur Feier', Insel 1909; orig. 1899"),
+    # Goethe
+    ("goethe","west-östlicher divan"):  (1819, False, "Cotta, Stuttgart, 1819"),
+    ("goethe","divan"):                 (1819, False, "Cotta, Stuttgart, 1819"),
+    ("goethe","gedichte"):              (1789, True,  "First in Goethes Schriften Bd.8, 1789; many later eds"),
+    # Schiller
+    ("schiller","gedichte"):            (1800, False, "Cotta, Tübingen, 1800 (vol.1)"),
+    # Klopstock
+    ("klopstock","oden"):               (1771, False, "Bode, Hamburg, 1771"),
+    ("klopstock","geistliche lieder"):  (1758, False, "Hamburg, 1758 (pt.1); 1769 (pt.2)"),
+    ("klopstock","hinterlassen"):       (1815, True,  "Posth., Hamburg, 1815"),
+    # Hölderlin
+    ("holderlin","gedichte"):           (1826, True,  "Posth. collected ed. Schwab/Uhland, 1826"),
+    ("hölderlin","gedichte"):           (1826, True,  "Posth. collected ed. Schwab/Uhland, 1826"),
+    # Mörike
+    ("mörike","gedichte"):              (1838, False, "Schweizerbart, Stuttgart, 1838 (1st ed.)"),
+    ("morike","gedichte"):              (1838, False, "Schweizerbart, Stuttgart, 1838 (1st ed.)"),
+    # Storm
+    ("storm","gedichte"):               (1852, False, "Schröder, Kiel, 1852 (1st ed.)"),
+    # Droste-Hülshoff
+    ("droste","gedichte"):              (1838, False, "Cotta, Stuttgart, 1838 (1st ed.)"),
+    ("droste","geistliche jahr"):       (1851, True,  "Posth., Aschendorff, Münster, 1851"),
+    # Brockes
+    ("brockes","irdisches vergnügen"):  (1721, False, "Hamburg, 1721–1748 (9 vols)"),
+    # Haller
+    ("haller","versuch schweizerischer"): (1732, False, "Bern, 1732"),
+    ("haller","gedichte"):              (1732, True,  "Likely 'Versuch Schweizerischer Gedichten', Bern 1732"),
+    # Morgenstern
+    ("morgenstern","galgenlieder"):     (1905, False, "Bruno Cassirer, Berlin, 1905"),
+    ("morgenstern","palmström"):        (1910, False, "Bruno Cassirer, Berlin, 1910"),
+    ("morgenstern","gingganz"):         (1919, True,  "Posth., R. Piper, Munich, 1919"),
+    ("morgenstern","phantas schloss"):  (1895, False, "Berlin, 1895"),
+    ("morgenstern","ich und du"):       (1911, False, "Bruno Cassirer, Berlin, 1911"),
+    ("morgenstern","einkehr"):          (1910, False, "R. Piper, Munich, 1910"),
+    ("morgenstern","melancholie"):      (1906, False, "Bruno Cassirer, Berlin, 1906"),
+    # Wedekind
+    ("wedekind","vier jahreszeiten"):   (1905, False, "Georg Müller, Munich, 1905"),
+    ("wedekind","lautenlieder"):        (1920, True,  "Posth., Georg Müller, Munich, 1920"),
+    # Dörmann
+    ("dörmann","neurotica"):            (1891, False, "Bondy, Wien, 1891"),
+    ("dörmann","sensationen"):          (1892, False, "Bondy, Wien, 1892"),
+    ("dörmann","gedichte"):             (1896, True,  "Wien, 1896"),
+    ("dormann","neurotica"):            (1891, False, "Bondy, Wien, 1891"),
+    ("dormann","sensationen"):          (1892, False, "Bondy, Wien, 1892"),
+    # Stefan George
+    ("george","jahr der seele"):        (1897, False, "Georg Bondi, Berlin, 1897"),
+    ("george","teppich des lebens"):    (1900, False, "Georg Bondi, Berlin, 1900"),
+    ("george","siebente ring"):         (1907, False, "Georg Bondi, Berlin, 1907"),
+    ("george","stern des bundes"):      (1914, False, "Georg Bondi, Berlin, 1914"),
+    ("george","neue reich"):            (1928, False, "Georg Bondi, Berlin, 1928"),
+    ("george","hymnen"):                (1890, False, "Privately printed, 1890"),
+    ("george","pilgerfahrten"):         (1891, False, "Privately printed, 1891"),
+    ("george","algabal"):               (1892, False, "Privately printed, 1892"),
+    ("george","bücher der hirten"):     (1895, False, "Georg Bondi, Berlin, 1895"),
+    ("george","gedichte"):              (None, True,  "Collected; exact original collection unclear"),
+}
 
-def text_of(elem):
-    return re.sub(r"\s+", " ", "".join(elem.itertext())).strip()
+SAMMELBAND_RE = re.compile(
+    r"gesammelt|sämtlich|ausgewählt|\bwerke\b|\bschriften\b|"
+    r"nachlass|hinterlassen|gesamtausgabe|gesamte\s+dichtung", re.I
+)
 
-def collection_from_path(n_attr):
-    parts = [p for p in n_attr.split("/") if p.strip()]
-    if len(parts) >= 5:
-        return parts[4]
-    elif len(parts) >= 4:
-        return parts[3]
-    return ""
 
-def is_dramatic(tei_elem):
-    n = tei_elem.get("n", "")
-    if "Divan" in n or "divan" in n:
-        return False
-    if tei_elem.find(f".//{tag('sp')}") is not None:
-        return True
-    if tei_elem.find(f".//{tag('speaker')}") is not None:
-        return True
-    return False
+def norm(s):
+    return re.sub(r"[^a-z0-9äöüß ]", " ", s.lower()).strip()
 
-def get_top_level_lgs(tei_elem):
+
+def lookup_pub_year(poet_name, coll_title):
+    """Returns (year|None, uncertain_bool, note, method)."""
+    poet_n = norm(poet_name)
+    coll_n = norm(coll_title)
+
+    best_score, best_entry = 0, None
+    for (pk, ck), val in COLL_PUB_YEARS.items():
+        if pk in poet_n and ck in coll_n:
+            score = len(pk) + len(ck)
+            if score > best_score:
+                best_score, best_entry = score, val
+    if best_entry:
+        year, unc, note = best_entry
+        return year, unc, note, "lookup"
+
+    m = re.search(r'\b(1[5-9]\d{2}|20[012]\d)\b', coll_title)
+    if m:
+        y = int(m.group(1))
+        return y, True, f"Year {y} extracted from collection title — verify", "title_regex"
+
+    if SAMMELBAND_RE.search(coll_title):
+        return None, True, "Sammelband/collected-works title; original pub year unknown", "sammelband"
+
+    return None, True, "Not in lookup; pub year unknown", "no_match"
+
+
+# ── XML loading ──────────────────────────────────────────────────────────────
+
+def load_xml(path):
+    if HAS_LXML:
+        try:
+            parser = LET.XMLParser(recover=True)
+            tree   = LET.parse(str(path), parser)
+            root   = tree.getroot()
+            xml_str = LET.tostring(root, encoding="unicode")
+            xml_str = re.sub(r'<\?xml[^?]*\?>', '', xml_str)
+            import xml.etree.ElementTree as ET2
+            return ET2.fromstring(xml_str)
+        except Exception:
+            pass
+    try:
+        import xml.etree.ElementTree as ET2
+        return ET2.parse(str(path)).getroot()
+    except Exception:
+        return None
+
+
+# ── Verse-line extraction ────────────────────────────────────────────────────
+
+def get_verse_lines(tei_elem):
+    """Returns (lines: list[str], stanza_counts: list[int])."""
     parent_map = {}
     for parent in tei_elem.iter():
         for child in parent:
             parent_map[child] = parent
 
-    stanzas = []
-    for elem in tei_elem.iter(tag("lg")):
-        parent = parent_map.get(elem)
-        if parent is not None and parent.tag != tag("lg"):
-            stanzas.append(elem)
-    return stanzas
+    def has_excluded_ancestor(elem):
+        curr = parent_map.get(elem)
+        while curr is not None:
+            if curr.tag in EXCLUDED_ANCESTORS:
+                return True
+            curr = parent_map.get(curr)
+        return False
 
-def extract_poem(tei_elem):
-    title = ""
+    def immediate_lg_id(elem):
+        curr = parent_map.get(elem)
+        while curr is not None:
+            if curr.tag == T("lg"):
+                return id(curr)
+            curr = parent_map.get(curr)
+        return None
+
+    lg_order  = OrderedDict()
+    line_data = []
+
+    for l_elem in tei_elem.iter(T("l")):
+        if has_excluded_ancestor(l_elem):
+            continue
+        text = re.sub(r"\s+", " ", "".join(l_elem.itertext())).strip()
+        if not text:
+            continue
+        lgid = immediate_lg_id(l_elem)
+        if lgid is not None and lgid not in lg_order:
+            lg_order[lgid] = len(lg_order)
+        st_idx = lg_order.get(lgid, -1)
+        line_data.append((text, st_idx))
+
+    lines = [t for t, _ in line_data]
+
+    st_counts: dict = OrderedDict()
+    for _, si in line_data:
+        st_counts[si] = st_counts.get(si, 0) + 1
+    stanza_counts = list(st_counts.values())
+
+    return lines, stanza_counts
+
+
+def stanza_pattern(counts):
+    if not counts:
+        return ""
+    if len(set(counts)) == 1:
+        return str(counts[0])
+    return "/".join(str(c) for c in counts)
+
+
+# ── Metadata helpers ─────────────────────────────────────────────────────────
+
+def get_poem_title(tei_elem, n_attr):
     candidates = []
-    for head in tei_elem.iter(tag("head")):
-        t = text_of(head)
-        t = re.sub(r"^\d+[\.\s]*", "", t).strip()
-        t = re.sub(r"\s+", " ", t).strip()
+    for head in tei_elem.iter(T("head")):
+        txt   = "".join(head.itertext()).strip()
+        txt   = re.sub(r"^\d+[\.\s]*", "", txt).strip()
         htype = head.get("type", "")
-        if t and htype in ("h4", "h3"):
-            candidates.append((htype, t))
-
+        if txt and len(txt) > 1:
+            candidates.append((htype, txt))
     for htype in ("h4", "h3", "h2"):
         for ht, t in reversed(candidates):
-            if ht == htype and len(t) > 1:
-                title = t
-                break
-        if title:
-            break
-    if not title:
-        for head in tei_elem.iter(tag("head")):
-            t = re.sub(r"^\d+[\.\s]*", "", text_of(head)).strip()
-            if len(t) > 1:
-                title = t
-                break
+            if ht == htype:
+                return t
+    parts = [p for p in n_attr.split("/") if p.strip()]
+    return parts[-1] if parts else "Unknown"
 
-    stanzas = []
-    all_lines = []
 
-    for lg in get_top_level_lgs(tei_elem):
-        stanza_lines = []
-        for l in lg.findall(tag("l")):
-            line_text = text_of(l)
-            if line_text:
-                stanza_lines.append(line_text)
-                all_lines.append(line_text)
-        if stanza_lines:
-            stanzas.append(stanza_lines)
+def get_collection_title(n_attr):
+    parts = [p for p in n_attr.split("/") if p.strip()]
+    if len(parts) >= 5:
+        return parts[4]
+    if len(parts) >= 4:
+        return parts[3]
+    return ""
 
-    return title, stanzas, all_lines
 
-ERSTDRUCK_RE = re.compile(
-    r'(?:vollst[äa]ndiger\s+)?Erstdruck[^.]{0,80}?(\d{4})',
-    re.IGNORECASE,
-)
+def get_tei_id(tei_elem):
+    for attr in ["{http://www.w3.org/XML/1998/namespace}id", "xml:id"]:
+        v = tei_elem.get(attr)
+        if v:
+            return v
+    return tei_elem.get("n", "")[:120]
 
-def get_metadata(tei_elem):
-    """
-    Returns three distinct date fields:
-      edition_year   — year of the source edition (publicationStmt/date)
-      erstdruck_year — first publication year parsed from notesStmt note text
-      comp_date_from / comp_date_to — composition date range (creation/date)
-    """
-    pub_place      = ""
-    edition_year   = ""
-    erstdruck_year = ""
-    comp_date_from = ""
-    comp_date_to   = ""
 
-    place = tei_elem.find(f".//{tag('pubPlace')}")
-    if place is not None and place.text:
-        pub_place = place.text.strip()
+# ── Main loop ────────────────────────────────────────────────────────────────
 
-    # Edition year: from sourceDesc/biblFull/publicationStmt/date
-    bib_pub = tei_elem.find(
-        f".//{tag('sourceDesc')}/{tag('biblFull')}/{tag('publicationStmt')}/{tag('date')}"
-    )
-    if bib_pub is not None:
-        edition_year = bib_pub.get("when") or bib_pub.get("when-iso") or (bib_pub.text or "").strip()
+poems      = []
+exclusions = []
+poem_id    = 0
 
-    # Erstdruck: regex on note text within notesStmt
-    for note in tei_elem.findall(f".//{tag('note')}"):
-        note_text = "".join(note.itertext())
-        m = ERSTDRUCK_RE.search(note_text)
-        if m:
-            yr = int(m.group(1))
-            if 1600 <= yr <= 1960:
-                erstdruck_year = str(yr)
-                break
+poet_dirs = sorted(CORPUS_DIR.iterdir())
+print(f"Processing {len(poet_dirs)} poet directories in {CORPUS_DIR}")
 
-    # Composition date range
-    comp = tei_elem.find(f".//{tag('creation')}/{tag('date')}")
-    if comp is not None:
-        comp_date_from = comp.get("notBefore") or comp.get("when") or ""
-        comp_date_to   = comp.get("notAfter")  or comp.get("when") or ""
-
-    return pub_place, edition_year, erstdruck_year, comp_date_from, comp_date_to
-
-# ── George normalization ──────────────────────────────────────────────────────
-
-def normalize_george_line(line):
-    """Apply standard German capitalization to a single line via spaCy POS tags."""
-    if not line.strip():
-        return line
-    doc = nlp(line)
-    parts = []
-    for i, tok in enumerate(doc):
-        text = tok.text
-        if text and (i == 0 or tok.pos_ in ("NOUN", "PROPN")):
-            text = text[0].upper() + text[1:]
-        parts.append(text + tok.whitespace_)
-    return "".join(parts).rstrip(" ")
-
-def normalize_george_text(text):
-    """Normalize full poem text (stanzas separated by blank lines)."""
-    normalized_stanzas = []
-    for stanza in text.split("\n\n"):
-        normalized_lines = [normalize_george_line(line) for line in stanza.split("\n")]
-        normalized_stanzas.append("\n".join(normalized_lines))
-    return "\n\n".join(normalized_stanzas)
-
-# ── XML parsing ───────────────────────────────────────────────────────────────
-
-def parse_xml_standard(xml_path):
-    try:
-        tree = ET.parse(xml_path)
-        return tree.getroot(), False
-    except ET.ParseError:
-        return None, False
-
-def parse_xml_george(xml_path):
-    """George XML has embedded <?xml?> declarations. Strip them and use lxml recovery."""
-    with open(xml_path, "rb") as f:
-        content = f.read().decode("utf-8", errors="replace")
-    content = re.sub(r"<\?xml[^?]*\?>", "", content)
-    content = '<?xml version="1.0" encoding="utf-8"?>\n' + content
-    parser = lxml_etree.XMLParser(recover=True, encoding="utf-8")
-    lxml_root = lxml_etree.fromstring(content.encode("utf-8"), parser)
-    raw = lxml_etree.tostring(lxml_root, encoding="unicode")
-    raw = re.sub(r"<\?xml[^?]*\?>", "", raw)
-    return ET.fromstring(raw)
-
-def parse_xml_lxml_recovery(xml_path):
-    """Generic lxml recovery fallback."""
-    parser = lxml_etree.XMLParser(recover=True, encoding="utf-8")
-    tree = lxml_etree.parse(str(xml_path), parser)
-    lxml_root = tree.getroot()
-    raw = lxml_etree.tostring(lxml_root, encoding="unicode")
-    raw = re.sub(r"<\?xml[^?]*\?>", "", raw)
-    return ET.fromstring(raw)
-
-# ── File processing ───────────────────────────────────────────────────────────
-
-def process_file(xml_path, poet_name):
-    is_george = (poet_name.lower() == "george")
-
-    if is_george:
-        if not HAS_LXML:
-            print(f"  lxml required for George XML but not available")
-            return []
-        try:
-            root = parse_xml_george(xml_path)
-            recovered = True
-        except Exception as e:
-            print(f"  PARSE ERROR (george) {xml_path.name}: {e}")
-            return []
-    else:
-        root, recovered = None, False
-        try:
-            tree = ET.parse(xml_path)
-            root = tree.getroot()
-        except ET.ParseError:
-            if HAS_LXML:
-                try:
-                    root = parse_xml_lxml_recovery(xml_path)
-                    recovered = True
-                except Exception as e:
-                    print(f"  PARSE ERROR (lxml) {xml_path.name}: {e}")
-                    return []
-            else:
-                print(f"  PARSE ERROR (unrecoverable) {xml_path.name}")
-                return []
-
-    if root is None:
-        return []
-    if recovered:
-        print(f"  (lxml recovery) {xml_path.name}")
-
-    poems = []
-    poem_counter = [0]
-
-    def process_tei(tei_elem):
-        n_attr = tei_elem.get("n", "")
-        if not n_attr:
-            return
-
-        if is_dramatic(tei_elem):
-            return
-
-        collection = collection_from_path(n_attr)
-        title, stanzas, lines = extract_poem(tei_elem)
-
-        if not title or not lines:
-            return
-        if len(lines) < MIN_LINES:
-            return
-        if len(lines) > MAX_LINES:
-            return
-        if title.lower().strip(".") in EXCLUDE_TITLES:
-            return
-
-        pub_place, edition_year, erstdruck_year, comp_from, comp_to = get_metadata(tei_elem)
-
-        text = "\n\n".join("\n".join(s) for s in stanzas)
-
-        poem_counter[0] += 1
-        poem_id = f"{re.sub(r'[^a-zA-Z0-9]', '_', poet_name)}_{poem_counter[0]:04d}"
-
-        record = {
-            "poem_id":        poem_id,
-            "poet":           poet_name,
-            "collection":     collection,
-            "poem_title":     title,
-            "text":           text,
-            "stanzas":        stanzas,
-            "n_stanzas":      len(stanzas),
-            "n_lines":        len(lines),
-            "pub_place":      pub_place,
-            "edition_year":   edition_year,
-            "erstdruck_year": erstdruck_year,
-            "comp_date_from": comp_from,
-            "comp_date_to":   comp_to,
-            "source_file":    xml_path.name,
-        }
-
-        if is_george:
-            record["george_normalized_text"] = normalize_george_text(text)
-
-        poems.append(record)
-
-    for tei in root.iter(tag("TEI")):
-        process_tei(tei)
-
-    return poems
-
-# ── Run ───────────────────────────────────────────────────────────────────────
-
-all_poems = []
-
-for poet_dir in sorted(CORPUS_DIR.iterdir()):
+for poet_dir in poet_dirs:
     if not poet_dir.is_dir():
         continue
-    xml_files = sorted(poet_dir.glob("*.xml"))
-    if not xml_files:
-        continue
+    poet_folder = poet_dir.name
+    xml_files   = sorted(poet_dir.glob("*.xml"))
 
-    poet_name  = poet_dir.name
-    poet_poems = []
-    for xml_file in xml_files:
-        if xml_file.name.startswith("~"):
+    for xml_path in xml_files:
+        root = load_xml(xml_path)
+        if root is None:
+            exclusions.append({"source_file": xml_path.name, "poet": poet_folder,
+                                "poem_title": "", "reason": "XML parse failure"})
             continue
-        extracted = process_file(xml_file, poet_name)
-        poet_poems.extend(extracted)
 
-    print(f"  {poet_name:35s} {len(poet_poems):4d} poems  "
-          f"({len(xml_files)} file{'s' if len(xml_files)>1 else ''})")
-    all_poems.extend(poet_poems)
+        teis = root.findall(f".//{T('TEI')}")
+        if not teis and root.tag == T("TEI"):
+            teis = [root]
 
-for i, p in enumerate(all_poems):
-    p["global_id"] = i
+        for tei in teis:
+            n_attr    = tei.get("n", "")
+            tei_id    = get_tei_id(tei)
+            title     = get_poem_title(tei, n_attr)
+            coll      = get_collection_title(n_attr)
+            parts     = [p for p in n_attr.split("/") if p.strip()]
+            poet_name = parts[2] if len(parts) >= 3 else poet_folder
 
-out_path = OUT_DIR / "poems_raw.json"
-with open(out_path, "w", encoding="utf-8") as f:
-    json.dump(all_poems, f, ensure_ascii=False, indent=2)
+            # Dramatic exclusion (except West-östlicher Divan)
+            if "Divan" not in n_attr and "divan" not in n_attr:
+                if (tei.find(f".//{T('sp')}") is not None or
+                        tei.find(f".//{T('speaker')}") is not None):
+                    exclusions.append({"source_file": xml_path.name, "poet": poet_name,
+                                       "poem_title": title,
+                                       "reason": "Dramatic content (<sp>/<speaker>)"})
+                    continue
 
-print(f"\nTotal: {len(all_poems)} poems -> {out_path}")
+            if title.lower().strip() in EXCLUDE_TITLES:
+                exclusions.append({"source_file": xml_path.name, "poet": poet_name,
+                                   "poem_title": title, "reason": f"Excluded title"})
+                continue
 
-# ── Diagnostics ───────────────────────────────────────────────────────────────
-from collections import Counter
-by_poet       = Counter(p["poet"] for p in all_poems)
-by_collection = Counter(p["collection"] for p in all_poems)
+            lines, stanza_counts = get_verse_lines(tei)
 
-print("\nBy poet:")
-for poet, n in sorted(by_poet.items(), key=lambda x: -x[1]):
-    print(f"  {poet:35s} {n}")
+            if len(lines) < MIN_LINES:
+                exclusions.append({"source_file": xml_path.name, "poet": poet_name,
+                                   "poem_title": title,
+                                   "reason": f"Too few verse lines ({len(lines)})"})
+                continue
 
-print("\nBy collection (top 25):")
-for coll, n in by_collection.most_common(25):
-    print(f"  {coll:50s} {n}")
+            if len(lines) > MAX_LINES:
+                exclusions.append({"source_file": xml_path.name, "poet": poet_name,
+                                   "poem_title": title,
+                                   "reason": f"Too many verse lines ({len(lines)})"})
+                continue
 
-print("\nSample titles:")
-for p in all_poems[:5]:
-    print(f"  [{p['poet']}] {p['collection']} / {p['poem_title']}")
+            year, uncertain, note, method = lookup_pub_year(poet_name, coll)
 
-george_poems = [p for p in all_poems if p["poet"] == "george"]
-if george_poems:
-    print(f"\nGeorge sample (original vs normalized):")
-    sample = george_poems[0]
-    orig_lines = sample["text"].split("\n")[:4]
-    norm_lines = sample.get("george_normalized_text", "").split("\n")[:4]
-    for o, n in zip(orig_lines, norm_lines):
-        print(f"  orig: {o}")
-        print(f"  norm: {n}")
-        print()
+            poem_id += 1
+            poems.append({
+                "poem_id":                       poem_id,
+                "poet":                          poet_name,
+                "poem_title":                    title,
+                "collection_title":              coll,
+                "collection_pub_year":           year,
+                "collection_pub_year_uncertain": uncertain,
+                "collection_pub_year_note":      note,
+                "collection_pub_year_method":    method,
+                "comp_year":                     None,
+                "comp_year_note":                "Not extracted in this pipeline",
+                "source_file":                   xml_path.name,
+                "tei_id":                        tei_id,
+                "total_verse_lines":             len(lines),
+                "stanza_pattern":                stanza_pattern(stanza_counts),
+                "first_12_lines":                lines[:12],
+                "first_12_text":                 "\n".join(lines[:12]),
+            })
+
+print(f"\nExtracted {len(poems)} poems, {len(exclusions)} exclusions")
+
+with open(OUT_DIR / "poems_v2.json", "w", encoding="utf-8") as f:
+    json.dump(poems, f, ensure_ascii=False, indent=2)
+
+excl_fields = ["source_file", "poet", "poem_title", "reason"]
+with open(OUT_DIR / "exclusions_v2.csv", "w", newline="", encoding="utf-8") as f:
+    w = csv.DictWriter(f, fieldnames=excl_fields, extrasaction="ignore")
+    w.writeheader()
+    w.writerows(exclusions)
+
+print(f"Saved → output/poems_v2.json")
+print(f"Saved → output/exclusions_v2.csv")
