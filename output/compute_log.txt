@@ -1,0 +1,37 @@
+/Users/steviemiller/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Loading dbmdz/german-gpt2...
+Model on mps
+  [    1/2806] Haller, Albrecht von Ueber eine Hochzeit
+  [  101/2806] Brockes, Barthold He Nützliche Eintheilung der Zeit
+  [  201/2806] Droste-Hülshoff, Ann Der Teetisch
+  [  301/2806] Droste-Hülshoff, Ann Als der Herr in Sidons Land gekomme
+  [  401/2806] Dörmann, Felix       2. [Der Traum der keuschen Liebe]
+  [  501/2806] Hölderlin, Friedrich Schwabens Mägdelein
+  [  601/2806] Hölderlin, Friedrich von Homburg
+  [  701/2806] Klopstock, Friedrich Fürstenlob
+  [  801/2806] Morgenstern, Christi Auffahrt
+  [  901/2806] Morgenstern, Christi Vor einem Wasserfall
+  [ 1001/2806] Morgenstern, Christi An meine Seele
+  [ 1101/2806] Morgenstern, Christi Die zwei Wurzeln
+  [ 1201/2806] Mörike, Eduard       Früh im Wagen
+  [ 1301/2806] Mörike, Eduard       Auf einem Kirchturm
+  [ 1401/2806] Rilke, Rainer Maria  Des Lied der Waise
+  [ 1501/2806] Rilke, Rainer Maria  Saul unter den Propheten
+  [ 1601/2806] Rilke, Rainer Maria  Die Darstellung Mariae im Tempel
+  [ 1701/2806] Schiller, Friedrich  Das Glück und die Weisheit
+  [ 1801/2806] George, Stefan       DIE NAJADE
+  [ 1901/2806] Goethe, Johann Wolfg [Und was im Pend Nameh steht]
+  [ 2001/2806] Goethe, Johann Wolfg Buch Suleika
+  [ 2101/2806] Heym, Georg          Der Winter
+  [ 2201/2806] Hofmannsthal, Hugo v Sonett der Welt
+  [ 2301/2806] Hofmannsthal, Hugo v Der Kaiser von China spricht:
+  [ 2401/2806] Stadler, Ernst       In diesen Nächten
+  [ 2501/2806] Storm, Theodor       Juli
+  [ 2601/2806] Trakl, Georg         Im Herbst
+  [ 2701/2806] Wedekind, Frank      Chor der Nymphen
+  [ 2801/2806] Wedekind, Frank      An das Leben
+
+Done.  2806 poems computed, 0 errors
+Model: dbmdz/german-gpt2
+Saved → output/poems_metrics_v2.csv
