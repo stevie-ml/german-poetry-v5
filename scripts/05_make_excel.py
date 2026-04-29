@@ -22,9 +22,8 @@ OUT_DIR = Path.home() / "german-poetry-v5" / "output"
 # ── Load data ─────────────────────────────────────────────────────────────────
 df = pd.read_csv(OUT_DIR / "poems_v5.csv")
 
-# Decade bins
-df["pub_decade"]  = (df["pub_year"]  // 10 * 10).where(df["pub_year"].notna())
-df["comp_decade"] = (df["comp_year"] // 10 * 10).where(df["comp_year"].notna())
+# Decade bins (temporal_year = erstdruck when available, else comp_year if not uncertain)
+df["temporal_decade"] = (df["temporal_year"] // 10 * 10).where(df["temporal_year"].notna())
 df["mean_stanza_len"] = (df["n_lines"] / df["n_stanzas"].replace(0, np.nan)).round(1)
 
 METRICS = ["mean_surprisal", "uid_sigma", "s2_mean", "mean_entropy",
@@ -112,9 +111,10 @@ POEMS_COLS = [
     ("Collection",        "collection",         C_META),
     ("Poem Title",        "poem_title",         C_META),
     ("Comp Year",         "comp_year",          C_DATE),
-    ("Pub Year",          "pub_year",           C_DATE),
-    ("CompDecade",        "comp_decade",        C_DATE),
-    ("PubDecade",         "pub_decade",         C_DATE),
+    ("Erstdruck Year",    "erstdruck_year_int", C_DATE),
+    ("Edition Year",      "edition_year_int",   C_DATE),
+    ("Temporal Year",     "temporal_year",      C_DATE),
+    ("Date Uncertain",    "date_uncertain",     C_DATE),
     ("Lines",             "n_lines",            C_STRUCT),
     ("Stanzas",           "n_stanzas",          C_STRUCT),
     ("Mean Stanza Len",   "mean_stanza_len",    C_STRUCT),
@@ -129,7 +129,6 @@ POEMS_COLS = [
     ("TTR",               "ttr",                C_ENTR),
     ("Person",            "person",             C_ANN),
     ("Addressee",         "has_addressee",      C_ANN),
-    ("Theme",             "dominant_theme",     C_ANN),
     ("Imagery",           "imagery_density",    C_ANN),
     ("Valence",           "emotional_valence",  C_ANN),
     ("Intensity",         "emotional_intensity",C_ANN),
@@ -368,12 +367,12 @@ ws5.cell(row=1, column=1, value="Spearman Correlation Matrix — all 2582 poems"
 ws5.cell(row=1, column=1).fill = C_BANNER
 ws5.cell(row=1, column=1).font = Font(color="E6B85A", bold=True, size=11)
 
-corr_cols = METRICS + ["n_lines", "closure", "pub_year"]
+corr_cols = METRICS + ["n_lines", "closure", "temporal_year"]
 corr_labels = [METRIC_LABELS.get(c, c) for c in corr_cols]
 
 df_corr = df[corr_cols].copy()
-df_corr["closure"]  = pd.to_numeric(df_corr["closure"],  errors="coerce")
-df_corr["pub_year"] = pd.to_numeric(df_corr["pub_year"], errors="coerce")
+df_corr["closure"]       = pd.to_numeric(df_corr["closure"],       errors="coerce")
+df_corr["temporal_year"] = pd.to_numeric(df_corr["temporal_year"], errors="coerce")
 corr_mat = df_corr.corr(method="spearman").round(3)
 
 # Row/col headers
@@ -413,25 +412,31 @@ ws5.column_dimensions["A"].width = 18
 # ═══════════════════════════════════════════════════════════════════════════════
 ws6 = wb.create_sheet("Temporal Confound")
 ws6.cell(row=1, column=1,
-         value="Temporal Confound Analysis — S² Mean and Mean Surprisal by Publication Decade"
+         value="Temporal Confound Analysis — S² Mean and Mean Surprisal by Decade"
          ).fill = C_BANNER
 ws6.cell(row=1, column=1).font = Font(color="E6B85A", bold=True, size=11)
 
 ws6.cell(row=3, column=1,
-         value=("NOTE: Erstdruck dates collected from TEI sourceDesc. "
-                "Many poems lack pub_year — analysis covers only those with valid dates.")
+         value=("NOTE: temporal_year = Erstdruck (first publication) when available (853/2582 poems), "
+                "else comp_year midpoint when date_uncertain=False (range ≤40 yrs). "
+                "Lifespan-proxy comp dates (range >40 yrs, e.g. Goethe 1749-1832) are excluded. "
+                "This yields ~1,400-1,600 poems with reliable dates. "
+                "Erstdruck was preferred as it reflects actual first publication; comp_year alone had "
+                "58% unreliable values (lifespan proxies). Both columns are in the Poems sheet.")
          ).font = Font(italic=True, size=9, color="7F8C8D")
+ws6.cell(row=3, column=1).alignment = Alignment(wrap_text=True)
+ws6.row_dimensions[3].height = 55
 
-dec_df = df[df["pub_decade"].notna()].copy()
-dec_df["pub_decade"] = dec_df["pub_decade"].astype(int)
-dec_agg = dec_df.groupby("pub_decade").agg(
+dec_df = df[df["temporal_decade"].notna()].copy()
+dec_df["temporal_decade"] = dec_df["temporal_decade"].astype(int)
+dec_agg = dec_df.groupby("temporal_decade").agg(
     n=("poem_id", "count"),
     **{f"{m}_mean": (m, "mean") for m in METRICS},
     **{f"{m}_sd":   (m, "std")  for m in METRICS},
 ).round(4).reset_index()
 
 dec_cols = (
-    [("Pub Decade", "pub_decade", C_DATE), ("N", "n", C_STRUCT)]
+    [("Decade", "temporal_decade", C_DATE), ("N", "n", C_STRUCT)]
     + [(f"{METRIC_LABELS[m]} Mean", f"{m}_mean", C_ENTR) for m in METRICS]
     + [(f"{METRIC_LABELS[m]} SD",   f"{m}_sd",   C_ENTR) for m in METRICS]
 )
@@ -451,9 +456,9 @@ for _, rdata in dec_agg.iterrows():
         cell.fill = row_fill
     row += 1
 
-# Spearman r between pub_year and metrics
+# Spearman r between temporal_year and metrics
 row += 2
-section_header(ws6, row, 1, "Spearman r between Pub Year and metrics (poems with valid pub_year)")
+section_header(ws6, row, 1, "Spearman r between temporal_year and metrics (poems with valid temporal_year)")
 ws6.merge_cells(start_row=row, start_column=1, end_row=row, end_column=4)
 row += 1
 
@@ -461,11 +466,11 @@ for ci, h in enumerate(["Metric", "Spearman r", "p-value", "N"], 1):
     set_header(ws6.cell(row=row, column=ci), C_ENTR if ci > 1 else C_META, h)
 row += 1
 
-yr_df = df[df["pub_year"].notna()].copy()
+yr_df = df[df["temporal_year"].notna()].copy()
 for m in METRICS:
-    sub = yr_df[[m, "pub_year"]].dropna()
+    sub = yr_df[[m, "temporal_year"]].dropna()
     if len(sub) >= 10:
-        r, p = sp_stats.spearmanr(sub[m], sub["pub_year"])
+        r, p = sp_stats.spearmanr(sub[m], sub["temporal_year"])
         for ci, val in enumerate([METRIC_LABELS[m], round(r,4), round(p,4), len(sub)], 1):
             c = ws6.cell(row=row, column=ci, value=val)
             c.font = DATA_FONT

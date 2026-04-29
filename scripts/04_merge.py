@@ -43,17 +43,27 @@ df_raw = pd.DataFrame([{
     "n_stanzas":              r["n_stanzas"],
     "n_lines":                r["n_lines"],
     "pub_place":              r.get("pub_place", ""),
-    "pub_date":               r.get("pub_date", ""),
+    "edition_year":           r.get("edition_year", ""),
+    "erstdruck_year":         r.get("erstdruck_year", ""),
     "comp_date_from":         r.get("comp_date_from", ""),
     "comp_date_to":           r.get("comp_date_to", ""),
     "george_normalized_text": r.get("george_normalized_text", ""),
 } for r in raw])
 
-df_raw["pub_year"]  = df_raw["pub_date"].apply(parse_year)
+df_raw["edition_year_int"]   = df_raw["edition_year"].apply(parse_year)
+df_raw["erstdruck_year_int"] = df_raw["erstdruck_year"].apply(parse_year)
 df_raw["comp_year"] = df_raw.apply(
     lambda r: np.nanmean([parse_year(r["comp_date_from"]), parse_year(r["comp_date_to"])]),
     axis=1
 )
+
+# date_uncertain: comp range > 20 years, or no erstdruck when collection has some
+df_raw["comp_range"] = df_raw.apply(
+    lambda r: abs((parse_year(r["comp_date_to"]) or 0) - (parse_year(r["comp_date_from"]) or 0)),
+    axis=1
+)
+df_raw["date_uncertain"] = df_raw["comp_range"] > 40
+
 df_raw["_key"] = df_raw.apply(lambda r: make_key(r["poet"], r["poem_title"], r["n_lines"]), axis=1)
 
 
@@ -129,11 +139,25 @@ MOVEMENT = {
 }
 df["movement"] = df["poet"].map(MOVEMENT).fillna("Unbekannt")
 
+# temporal_year: best available date for temporal analysis.
+# Prefers erstdruck_year_int (actual first publication) when available.
+# Falls back to comp_year only when date_uncertain=False (comp range ≤ 40 yrs).
+# Lifespan proxies (date_uncertain=True, no erstdruck) are left as NaN.
+df["temporal_year"] = df.apply(
+    lambda r: r["erstdruck_year_int"] if pd.notna(r["erstdruck_year_int"])
+              else (r["comp_year"] if not r["date_uncertain"] and pd.notna(r["comp_year"]) else np.nan),
+    axis=1
+)
+
 
 # ── Reorder columns ───────────────────────────────────────────────────────────
 ordered = [
     "poem_id", "poet", "movement", "collection", "poem_title",
-    "pub_place", "pub_date", "pub_year", "comp_date_from", "comp_date_to", "comp_year",
+    "pub_place",
+    "comp_date_from", "comp_date_to", "comp_year",
+    "erstdruck_year", "erstdruck_year_int",
+    "edition_year", "edition_year_int",
+    "date_uncertain", "temporal_year",
     "n_lines", "n_stanzas", "n_words",
     "mean_surprisal", "mean_entropy", "s2_mean", "uid_sigma",
     "tension", "peak_pos", "ac1", "ttr",
@@ -150,6 +174,15 @@ print(f"Columns ({len(df.columns)}): {list(df.columns)}")
 print()
 print("Poet breakdown:")
 for poet, grp in df.groupby("poet"):
-    surp_ok = grp["mean_surprisal"].notna().sum()
-    ann_ok  = grp["dominant_theme"].notna().sum()
-    print(f"  {poet:35s} {len(grp):4d} poems  surprisal={surp_ok}  annotated={ann_ok}")
+    surp_ok  = grp["mean_surprisal"].notna().sum()
+    comp_ok  = grp["comp_year"].notna().sum()
+    erst_ok  = grp["erstdruck_year_int"].notna().sum()
+    ed_ok    = grp["edition_year_int"].notna().sum()
+    uncert   = grp["date_uncertain"].sum()
+    print(f"  {poet:35s} {len(grp):4d}  surprisal={surp_ok}  comp={comp_ok}  erstdruck={erst_ok}  edition={ed_ok}  uncertain={uncert}")
+
+print(f"\nDate coverage summary:")
+print(f"  comp_year:      {df['comp_year'].notna().sum()}/{len(df)}")
+print(f"  erstdruck_year: {df['erstdruck_year_int'].notna().sum()}/{len(df)}")
+print(f"  edition_year:   {df['edition_year_int'].notna().sum()}/{len(df)}")
+print(f"  date_uncertain: {df['date_uncertain'].sum()} poems (comp range >20 yrs)")

@@ -124,9 +124,21 @@ def extract_poem(tei_elem):
 
     return title, stanzas, all_lines
 
+ERSTDRUCK_RE = re.compile(
+    r'(?:vollst[äa]ndiger\s+)?Erstdruck[^.]{0,80}?(\d{4})',
+    re.IGNORECASE,
+)
+
 def get_metadata(tei_elem):
+    """
+    Returns three distinct date fields:
+      edition_year   — year of the source edition (publicationStmt/date)
+      erstdruck_year — first publication year parsed from notesStmt note text
+      comp_date_from / comp_date_to — composition date range (creation/date)
+    """
     pub_place      = ""
-    pub_date       = ""
+    edition_year   = ""
+    erstdruck_year = ""
     comp_date_from = ""
     comp_date_to   = ""
 
@@ -134,20 +146,30 @@ def get_metadata(tei_elem):
     if place is not None and place.text:
         pub_place = place.text.strip()
 
-    for date in tei_elem.findall(f".//{tag('date')}"):
-        val = date.get("when") or date.get("when-iso") or ""
-        if not val and date.text:
-            val = date.text.strip()
-        if val:
-            pub_date = val
-            break
+    # Edition year: from sourceDesc/biblFull/publicationStmt/date
+    bib_pub = tei_elem.find(
+        f".//{tag('sourceDesc')}/{tag('biblFull')}/{tag('publicationStmt')}/{tag('date')}"
+    )
+    if bib_pub is not None:
+        edition_year = bib_pub.get("when") or bib_pub.get("when-iso") or (bib_pub.text or "").strip()
 
+    # Erstdruck: regex on note text within notesStmt
+    for note in tei_elem.findall(f".//{tag('note')}"):
+        note_text = "".join(note.itertext())
+        m = ERSTDRUCK_RE.search(note_text)
+        if m:
+            yr = int(m.group(1))
+            if 1600 <= yr <= 1960:
+                erstdruck_year = str(yr)
+                break
+
+    # Composition date range
     comp = tei_elem.find(f".//{tag('creation')}/{tag('date')}")
     if comp is not None:
         comp_date_from = comp.get("notBefore") or comp.get("when") or ""
         comp_date_to   = comp.get("notAfter")  or comp.get("when") or ""
 
-    return pub_place, pub_date, comp_date_from, comp_date_to
+    return pub_place, edition_year, erstdruck_year, comp_date_from, comp_date_to
 
 # ── George normalization ──────────────────────────────────────────────────────
 
@@ -262,7 +284,7 @@ def process_file(xml_path, poet_name):
         if title.lower().strip(".") in EXCLUDE_TITLES:
             return
 
-        pub_place, pub_date, comp_from, comp_to = get_metadata(tei_elem)
+        pub_place, edition_year, erstdruck_year, comp_from, comp_to = get_metadata(tei_elem)
 
         text = "\n\n".join("\n".join(s) for s in stanzas)
 
@@ -279,7 +301,8 @@ def process_file(xml_path, poet_name):
             "n_stanzas":      len(stanzas),
             "n_lines":        len(lines),
             "pub_place":      pub_place,
-            "pub_date":       pub_date,
+            "edition_year":   edition_year,
+            "erstdruck_year": erstdruck_year,
             "comp_date_from": comp_from,
             "comp_date_to":   comp_to,
             "source_file":    xml_path.name,
