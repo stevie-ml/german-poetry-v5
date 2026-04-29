@@ -1,0 +1,53 @@
+poem_id,poet,collection,poem_title,person,has_addressee,emotional_valence,emotional_intensity,dominant_theme,imagery_density,tone,temporal_frame,setting,closure
+george_0001,george,Die Fibel. Auswahl Erster Verse,GELEITVERSE,,False,3,4,self,5,meditative,timeless,mixed,3
+george_0002,george,Die Fibel. Auswahl Erster Verse,[Ich wandelte auf öden düstren bahnen],,,6,4,love,4,lyric,present,abstract,4
+george_0003,george,Die Fibel. Auswahl Erster Verse,DIE NAJADE,,,2,4,myth,4,elegiac,past,rural,5
+george_0004,george,Die Fibel. Auswahl Erster Verse,[Mir ist es wie Titanien ergangen],,,3,3,self,3,elegiac,present,abstract,4
+george_0005,george,Die Fibel. Auswahl Erster Verse,ABENDBETRACHTUNG,,,2,4,death,4,elegiac,present,rural,4
+george_0006,george,Die Fibel. Auswahl Erster Verse,[Vernunft! du legtest deine kalten hände],,,2,4,love,3,elegiac,present,interior,3
+george_0007,george,Die Fibel. Auswahl Erster Verse,[Manchmal durchzuckt es mich wie heller strahl],,,3,4,self,4,meditative,present,abstract,3
+george_0008,george,Die Fibel. Auswahl Erster Verse,ERINNERUNG,,,5,4,time,4,elegiac,past,rural,4
+george_0009,george,Die Fibel. Auswahl Erster Verse,[Wenn die blätter gelblich werden],,,2,3,nature,4,elegiac,present,rural,4
+george_0010,george,Die Fibel. Auswahl Erster Verse,[Wenn die augen vergebens verlangen],,,4,3,nature,5,meditative,present,rural,3
+george_0011,george,Die Fibel. Auswahl Erster Verse,HERZENSNACHT,,,2,4,self,4,elegiac,past,abstract,4
+george_0012,george,Die Fibel. Auswahl Erster Verse,[Warum schweigst du meine leier],,,2,4,self,3,elegiac,present,abstract,3
+george_0013,george,Die Fibel. Auswahl Erster Verse,[Ihr lüfte die ihr mild vom himmel schwebet],,,6,4,nature,4,ecstatic,present,abstract,4
+george_0014,george,Die Fibel. Auswahl Erster Verse,[Schon künden heissere sonnenstrahlen an],,,3,3,nature,4,meditative,present,rural,3
+george_0015,george,Die Fibel. Auswahl Erster Verse,[Du standest in der wolken wehen],,,4,4,love,4,lyric,present,abstract,3
+george_0016,george,Die Fibel. Auswahl Erster Verse,DIE SIRENE,,,2,5,love,4,dramatic,timeless,mixed,4
+george_0017,george,Die Fibel. Auswahl Erster Verse,[Sei stolzer als die prunkenden pfauen],,,2,5,love,3,dramatic,past,abstract,4
+george_0018,george,Die Fibel. Auswahl Erster Verse,DER BLUMENELF,,,2,5,love,5,elegiac,past,rural,5
+george_0019,george,Die Fibel. Auswahl Erster Verse,[Wenn die gärten ganz verblassen],,,3,3,time,4,meditative,timeless,rural,3
+george_0020,george,Die Fibel. Auswahl Erster Verse,DIE ROSE,,,2,4,nature,4,elegiac,present,rural,4
+george_0021,george,Die Fibel. Auswahl Erster Verse,[Drunten zieht mit bunten wimpeln],,,3,3,death,4,meditative,present,mixed,4
+george_0022,george,Die Fibel. Auswahl Erster Verse,GRÄBER,,,2,4,death,4,elegiac,present,mixed,4
+george_0023,george,Die Fibel. Auswahl Erster Verse,II,,True,3,4,death,4,elegiac,present,rural,4
+george_0024,george,Die Fibel. Auswahl Erster Verse,III,,,2,4,love,4,elegiac,present,rural,4
+george_0025,george,Die Fibel. Auswahl Erster Verse,[Es zuckt aus grauem wolkenzelt],,,2,4,love,4,elegiac,present,abstract,3
+george_0026,george,Die Fibel. Auswahl Erster Verse,FRÜHE LIEBE,,,2,4,death,3,elegiac,past,abstract,4
+george_0027,george,Die Fibel. Auswahl Erster Verse,[Es heulet der dezemberwind],,,2,5,self,4,dramatic,present,urban,3
+george_0028,george,Die Fibel. Auswahl Erster Verse,DES KRANKEN BITTE,,,3,4,death,4,elegiac,future,rural,4
+george_0029,george,Die Fibel. Auswahl Erster Verse,IKARUS,,True,2,4,myth,4,elegiac,past,abstract,4
+george_0030,george,Die Fibel. Auswahl Erster Verse,NACH DEM SPANISCHEN,,,3,4,sleep,4,elegiac,timeless,abstract,4
+george_0031,george,Die Fibel. Auswahl Erster Verse,NACH DEM SPANISCHEN DES CAMPOAMOR,,,2,4,death,2,elegiac,timeless,abstract,4
+george_0032,george,Die Fibel. Auswahl Erster Verse,NACH DEM ITALIÄNISCHEN,,,2,5,death,4,dramatic,past,interior,5
+george_0033,george,Die Fibel. Auswahl Erster Verse,NACH DEM ENGLISCHEN DER MRS. F. HEMANS,,,2,4,death,4,elegiac,present,rural,4
+george_0034,george,Die Fibel. Auswahl Erster Verse,NACH SHELLEY,,,3,5,love,4,ecstatic,present,interior,3
+george_0035,george,Die Fibel. Auswahl Erster Verse,AUS IBSENS BRAND,,,2,4,religion,3,dramatic,timeless,abstract,4
+george_0036,george,Die Fibel. Auswahl Erster Verse,AUS IBSENS KOMÖDIE DER LIEBE,,,6,4,self,4,ecstatic,present,rural,3
+george_0037,george,Die Fibel. Auswahl Erster Verse,DIE GLOCKEN,,,4,3,self,3,meditative,present,abstract,3
+george_0038,george,Die Fibel. Auswahl Erster Verse,[Ich kam als der winter noch thronte],,,4,3,time,4,elegiac,past,rural,4
+george_0039,george,Die Fibel. Auswahl Erster Verse,NOVEMBER-ROSE,,,3,4,death,4,elegiac,present,rural,4
+george_0040,george,Die Fibel. Auswahl Erster Verse,DIE SCHMIEDE,,,4,4,self,4,elegiac,present,abstract,4
+george_0041,george,Die Fibel. Auswahl Erster Verse,DER SEE,,,6,3,nature,5,lyric,present,rural,4
+george_0042,george,Die Fibel. Auswahl Erster Verse,SEEFAHRT,,,3,3,self,4,elegiac,past,mixed,4
+george_0043,george,Die Fibel. Auswahl Erster Verse,UNSER HERD,,,6,2,home,5,lyric,present,interior,4
+george_0044,george,Die Fibel. Auswahl Erster Verse,STIMMUNG,,,3,3,self,4,meditative,present,urban,3
+george_0045,george,Die Fibel. Auswahl Erster Verse,SONETT NACH PETRARKA,,,5,4,love,4,elegiac,timeless,abstract,4
+george_0046,george,Die Fibel. Auswahl Erster Verse,ERSTER FRÜHLINGSTAG,,,5,4,nature,4,lyric,present,rural,3
+george_0047,george,Die Fibel. Auswahl Erster Verse,[Die alte liebe noch],,,3,4,love,4,elegiac,present,abstract,4
+george_0048,george,Die Fibel. Auswahl Erster Verse,KEIM-MONAT,,,3,5,body,4,ecstatic,present,interior,3
+george_0049,george,Die Fibel. Auswahl Erster Verse,FRIEDE,,,5,3,self,4,meditative,present,interior,4
+george_0050,george,Die Fibel. Auswahl Erster Verse,GELBE ROSE,,,5,4,body,5,lyric,present,abstract,3
+george_0051,george,Die Fibel. Auswahl Erster Verse,DAS BILD,,,2,5,self,5,elegiac,present,interior,2
+george_0052,george,Die Fibel. Auswahl Erster Verse,PRIESTER,,,2,4,body,4,ironic,present,abstract,3

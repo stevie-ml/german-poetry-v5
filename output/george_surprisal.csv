@@ -1,0 +1,53 @@
+poem_id,poet,collection,poem_title,n_lines,n_stanzas,n_words,pub_place,pub_date,comp_date_from,comp_date_to,mean_surprisal,mean_entropy,s2_mean,uid_sigma,tension,peak_pos,ac1,ttr
+george_0001,george,Die Fibel. Auswahl Erster Verse,GELEITVERSE,24,6,128,Berlin,1927,1868,1927,12.9363,7.2439,5.6924,7.6774,-0.6921,0.1328,0.1624,0.8047
+george_0002,george,Die Fibel. Auswahl Erster Verse,[Ich wandelte auf öden düstren bahnen],14,4,99,Berlin,1927,1868,1927,10.7913,6.5856,4.2058,6.8302,1.0004,0.5556,0.2663,0.8384
+george_0003,george,Die Fibel. Auswahl Erster Verse,DIE NAJADE,28,7,147,Berlin,1927,1868,1927,11.684,6.9561,4.7279,8.0213,-2.8737,0.0136,0.1103,0.7959
+george_0004,george,Die Fibel. Auswahl Erster Verse,[Mir ist es wie Titanien ergangen],8,2,58,Berlin,1927,1868,1927,10.3881,6.7982,3.59,7.2668,-2.3569,0.1724,0.1094,0.8448
+george_0005,george,Die Fibel. Auswahl Erster Verse,ABENDBETRACHTUNG,18,6,81,Berlin,1927,1868,1927,13.6533,7.2718,6.3814,7.6135,-1.4868,0.321,0.0174,0.9383
+george_0006,george,Die Fibel. Auswahl Erster Verse,[Vernunft! du legtest deine kalten hände],12,3,85,Berlin,1927,1868,1927,10.8254,7.4144,3.411,5.9226,-0.7478,0.1059,0.1468,0.8588
+george_0007,george,Die Fibel. Auswahl Erster Verse,[Manchmal durchzuckt es mich wie heller strahl],7,1,52,Berlin,1927,1868,1927,11.3207,6.0699,5.2508,8.4158,2.6282,0.7308,-0.0621,0.8654
+george_0008,george,Die Fibel. Auswahl Erster Verse,ERINNERUNG,12,4,69,Berlin,1927,1868,1927,11.7356,6.4244,5.3112,7.3327,-1.5457,0.0435,-0.036,0.7681
+george_0009,george,Die Fibel. Auswahl Erster Verse,[Wenn die blätter gelblich werden],12,3,60,Berlin,1927,1868,1927,11.9087,7.1441,4.7646,7.2726,0.963,0.8167,0.2199,0.85
+george_0010,george,Die Fibel. Auswahl Erster Verse,[Wenn die augen vergebens verlangen],20,5,121,Berlin,1927,1868,1927,11.3941,7.0803,4.3138,6.6885,0.2855,0.0661,0.095,0.7934
+george_0011,george,Die Fibel. Auswahl Erster Verse,HERZENSNACHT,12,3,66,Berlin,1927,1868,1927,10.2321,6.6158,3.6163,5.674,-0.5698,0.3485,0.0835,0.8636
+george_0012,george,Die Fibel. Auswahl Erster Verse,[Warum schweigst du meine leier],16,4,91,Berlin,1927,1868,1927,10.1592,6.4602,3.699,5.5951,-0.3317,0.7473,0.1417,0.8022
+george_0013,george,Die Fibel. Auswahl Erster Verse,[Ihr lüfte die ihr mild vom himmel schwebet],10,4,64,Berlin,1927,1868,1927,13.3526,7.6231,5.7295,7.9586,0.9323,0.9844,-0.0422,0.8594
+george_0014,george,Die Fibel. Auswahl Erster Verse,[Schon künden heissere sonnenstrahlen an],12,3,81,Berlin,1927,1868,1927,12.9332,7.6603,5.2729,7.7173,0.2008,0.6543,0.2921,0.8765
+george_0015,george,Die Fibel. Auswahl Erster Verse,[Du standest in der wolken wehen],12,3,67,Berlin,1927,1868,1927,10.9937,6.2185,4.7752,6.8139,0.7436,0.6119,0.1908,0.9254
+george_0016,george,Die Fibel. Auswahl Erster Verse,DIE SIRENE,12,4,74,Berlin,1927,1868,1927,12.2972,7.4323,4.8649,8.1292,-1.4244,0.7432,0.1214,0.8649
+george_0017,george,Die Fibel. Auswahl Erster Verse,[Sei stolzer als die prunkenden pfauen],16,4,110,Berlin,1927,1868,1927,9.7066,6.0391,3.6675,6.7952,-2.4769,0.7273,0.0653,0.7
+george_0018,george,Die Fibel. Auswahl Erster Verse,DER BLUMENELF,28,7,168,Berlin,1927,1868,1927,10.5798,6.5794,4.0004,6.5989,-2.3235,0.0714,0.0499,0.7024
+george_0019,george,Die Fibel. Auswahl Erster Verse,[Wenn die gärten ganz verblassen],16,3,80,Berlin,1927,1868,1927,11.9948,6.6474,5.3474,7.3879,-2.5022,0.3125,0.078,0.8625
+george_0020,george,Die Fibel. Auswahl Erster Verse,DIE ROSE,18,3,96,Berlin,1927,1868,1927,12.0452,7.0386,5.0066,7.3547,-2.8985,0.3333,0.2315,0.8646
+george_0021,george,Die Fibel. Auswahl Erster Verse,[Drunten zieht mit bunten wimpeln],12,4,59,Berlin,1927,1868,1927,14.9871,6.6379,8.3492,10.2785,2.3104,0.7458,0.0567,0.8983
+george_0022,george,Die Fibel. Auswahl Erster Verse,GRÄBER,12,3,77,Berlin,1927,1868,1927,11.7862,6.6153,5.1708,8.3748,-2.0988,0.3766,0.147,0.8442
+george_0023,george,Die Fibel. Auswahl Erster Verse,II,24,5,120,Berlin,1927,1868,1927,11.2734,6.7164,4.557,7.6726,-0.9496,0.025,0.2217,0.8083
+george_0024,george,Die Fibel. Auswahl Erster Verse,III,9,1,54,Berlin,1927,1868,1927,9.6789,5.6988,3.9801,7.5435,-6.3818,0.3148,-0.0154,0.6296
+george_0025,george,Die Fibel. Auswahl Erster Verse,[Es zuckt aus grauem wolkenzelt],20,5,125,Berlin,1927,1868,1927,11.5742,6.6468,4.9275,6.9244,-1.8624,0.032,0.1663,0.808
+george_0026,george,Die Fibel. Auswahl Erster Verse,FRÜHE LIEBE,16,3,123,Berlin,1927,1868,1927,9.9223,6.7141,3.2082,6.3965,-1.518,0.439,0.1855,0.7886
+george_0027,george,Die Fibel. Auswahl Erster Verse,[Es heulet der dezemberwind],12,3,59,Berlin,1927,1868,1927,12.8072,6.9858,5.8214,9.0797,-3.2232,0.0508,-0.0004,0.8983
+george_0028,george,Die Fibel. Auswahl Erster Verse,DES KRANKEN BITTE,13,2,64,Berlin,1927,1868,1927,10.6416,5.5874,5.0542,7.9014,2.0743,0.3125,0.1976,0.7656
+george_0029,george,Die Fibel. Auswahl Erster Verse,IKARUS,8,2,59,Berlin,1927,1868,1927,11.3709,6.3518,5.0192,8.1163,0.8176,0.5424,0.0544,0.8475
+george_0030,george,Die Fibel. Auswahl Erster Verse,NACH DEM SPANISCHEN,14,2,47,Berlin,1927,1868,1927,10.7719,5.8997,4.8722,6.4602,-2.8697,0.4681,0.1327,0.7872
+george_0031,george,Die Fibel. Auswahl Erster Verse,NACH DEM SPANISCHEN DES CAMPOAMOR,18,3,91,Berlin,1927,1868,1927,10.2264,6.4076,3.8188,6.4938,-3.5162,0.3516,0.0845,0.7253
+george_0032,george,Die Fibel. Auswahl Erster Verse,NACH DEM ITALIÄNISCHEN,18,6,131,Berlin,1927,1868,1927,11.4431,6.8404,4.6027,7.4085,-2.0087,0.0534,0.0999,0.8244
+george_0033,george,Die Fibel. Auswahl Erster Verse,NACH DEM ENGLISCHEN DER MRS. F. HEMANS,28,7,157,Berlin,1927,1868,1927,11.2292,6.9224,4.3068,6.8025,-0.9472,0.4076,0.1089,0.7834
+george_0034,george,Die Fibel. Auswahl Erster Verse,NACH SHELLEY,24,3,130,Berlin,1927,1868,1927,11.0385,6.208,4.8305,6.5343,-0.4589,0.2385,0.1501,0.8154
+george_0035,george,Die Fibel. Auswahl Erster Verse,AUS IBSENS BRAND,12,3,73,Berlin,1927,1868,1927,10.1534,5.481,4.6724,7.3931,-0.777,0.4384,0.2034,0.6849
+george_0036,george,Die Fibel. Auswahl Erster Verse,AUS IBSENS KOMÖDIE DER LIEBE,6,1,42,Berlin,1927,1868,1927,12.6691,7.7208,4.9484,6.4056,-4.7418,0.0476,0.1942,1.0
+george_0037,george,Die Fibel. Auswahl Erster Verse,DIE GLOCKEN,12,3,77,Berlin,1927,1868,1927,11.7902,5.945,5.8453,6.8605,-1.2086,0.0519,0.0948,0.8831
+george_0038,george,Die Fibel. Auswahl Erster Verse,[Ich kam als der winter noch thronte],10,2,58,Berlin,1927,1868,1927,10.972,6.8871,4.085,5.6704,2.2338,0.6552,0.3395,0.9138
+george_0039,george,Die Fibel. Auswahl Erster Verse,NOVEMBER-ROSE,16,2,100,Berlin,1927,1868,1927,11.401,6.4818,4.9192,7.5952,0.1665,0.25,-0.0038,0.84
+george_0040,george,Die Fibel. Auswahl Erster Verse,DIE SCHMIEDE,20,5,120,Berlin,1927,1868,1927,12.8556,7.2052,5.6504,7.6392,-1.6584,0.0667,0.245,0.8417
+george_0041,george,Die Fibel. Auswahl Erster Verse,DER SEE,24,2,112,Berlin,1927,1868,1927,11.9706,6.888,5.0827,7.0223,0.0041,0.1786,0.2207,0.8036
+george_0042,george,Die Fibel. Auswahl Erster Verse,SEEFAHRT,25,5,140,Berlin,1927,1868,1927,10.2847,6.4861,3.7987,5.8281,-0.7014,0.1786,0.0125,0.8214
+george_0043,george,Die Fibel. Auswahl Erster Verse,UNSER HERD,20,5,102,Berlin,1927,1868,1927,14.084,7.1817,6.9023,8.4329,-1.4501,0.3137,0.2001,0.8529
+george_0044,george,Die Fibel. Auswahl Erster Verse,STIMMUNG,10,1,55,Berlin,1927,1868,1927,10.2581,6.3999,3.8582,6.9424,-5.9623,0.0364,0.1359,0.8909
+george_0045,george,Die Fibel. Auswahl Erster Verse,SONETT NACH PETRARKA,14,4,119,Berlin,1927,1868,1927,9.9412,7.1551,2.7861,5.0961,1.5474,0.5966,0.1438,0.8319
+george_0046,george,Die Fibel. Auswahl Erster Verse,ERSTER FRÜHLINGSTAG,20,4,103,Berlin,1927,1868,1927,11.1633,6.9758,4.1875,5.672,0.8697,0.7864,0.1025,0.9223
+george_0047,george,Die Fibel. Auswahl Erster Verse,[Die alte liebe noch],9,1,52,Berlin,1927,1868,1927,11.111,7.1809,3.9301,6.6151,-2.8618,0.1154,-0.0368,0.8269
+george_0048,george,Die Fibel. Auswahl Erster Verse,KEIM-MONAT,6,3,39,Berlin,1927,1868,1927,13.4587,7.3381,6.1206,7.2789,-2.387,0.6154,-0.0891,0.9231
+george_0049,george,Die Fibel. Auswahl Erster Verse,FRIEDE,18,1,113,Berlin,1927,1868,1927,9.8473,6.6792,3.1682,6.4421,-1.2443,0.0177,0.0846,0.7876
+george_0050,george,Die Fibel. Auswahl Erster Verse,GELBE ROSE,11,1,70,Berlin,1927,1868,1927,12.8125,7.3081,5.5044,6.9947,0.6026,0.8571,-0.0301,0.8857
+george_0051,george,Die Fibel. Auswahl Erster Verse,DAS BILD,15,1,88,Berlin,1927,1868,1927,11.0383,6.4541,4.5842,6.213,-0.906,0.7955,0.0255,0.8409
+george_0052,george,Die Fibel. Auswahl Erster Verse,PRIESTER,19,1,98,Berlin,1927,1868,1927,12.4344,7.636,4.7984,6.0371,-0.7611,0.2959,0.0544,0.8469
